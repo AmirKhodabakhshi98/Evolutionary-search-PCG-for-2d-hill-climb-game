@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Evolution : MonoBehaviour
 {
-    public int populationSize; // size of population, should be an even number
+    public int populationSize; // size of population - EVEN NUMBER
     public int fitnessTarget; // fitness value to strive for
     public int generationsLimit; // max nbr of generations allowed
     public int individSize; // how many points each member of pop should have
@@ -16,40 +16,57 @@ public class Evolution : MonoBehaviour
 
     public Evolution(){
 
+    //    Search();
+
+    }
+
+
+    public void Start()
+    {
         Search();
 
     }
 
-    private void Search()
+    private void Search() //NOOOOOOOOOOOOOOOOOOOOTEEEEE här lägga till o skriva ut siffror etc
     {
         List<Level> population = new List<Level>();
         int nbrOfGenerations = 0;
 
         population = InitializePopulation(population); //initialize a population with random values
+        int most=0;
+        int least=0;
+        int avg=0;
 
         while (nbrOfGenerations < generationsLimit)
         {
 
             population = Fitness(population);   // assign them all a fitness value
-            var (pop, mostFit, leastFit, avgFitness) = SortByFitness(population);               //sort based on fitness value
+            var (pop, mostFit, leastFit, avgFitness) = SortByFitness(population);  //sort based on fitness value
 
             //if target fitness has been reached search is stopped
             if (mostFit >= fitnessTarget)
             { break; }
 
-            population = NaturalSelection(population);     //replace bottom half with copies of the top half
+            population = NaturalSelection(pop);     //replace bottom half with copies of the top half
             population = MutatePopulation(population);     //mutate the copied members of population
-            
 
 
+            //kod för printa most, least, avg till fil.
 
-            
+            most = mostFit;
+            least = leastFit;
+            avg = avgFitness;
+
             nbrOfGenerations++;
         }
 
-        GenerateLevel(population[0].heightArray); //sends in top ranked candidate for level generation after search is finished
+        Debug.Log("mostfit: " + most + "\n" + "Least:"  + least);
+        Debug.Log("avg: " + avg);   
+  //      GenerateLevel(population[0].heightArray); //sends in top ranked candidate for level generation after search is finished
 
         //create level
+
+
 
     }
 
@@ -66,13 +83,94 @@ public class Evolution : MonoBehaviour
 
     
 
+    //method to assign fitness score to each member of population
     public List<Level> Fitness(List<Level> pop)
     {
-        int populationMaxFitness = 0;
+        //  int populationMaxFitness = 0; ?
+
+        int highestDrop = 0 ;
+        int nbrOfFlatTerrain = 0;
+
+        //loop through population and assign total score based on the various fitness tests.
+        for(int i=0; i<pop.Count; i++)
+        {
+            highestDrop = 0;
+            nbrOfFlatTerrain = 0;
 
 
+            highestDrop = HighestDropFinder(pop[i].heightArray);
+            nbrOfFlatTerrain = NbrOfFlatTerrain(pop[i].heightArray);
 
+            pop[i].fitnessValue = highestDrop - nbrOfFlatTerrain;
+
+        //    Debug.Log("highest= " + highestDrop + ", flat= " + nbrOfFlatTerrain + "fitness: "+ pop[i].fitnessValue);
+
+        }
+        
         return pop;
+    }
+
+
+
+
+
+    //takes a level and returns the biggest drop/downward slope in the level
+    private int HighestDropFinder(int[] heightArray)
+    {
+        int highestDrop = 0;
+        int currentDrop = 0;
+
+        int dropTop = 0;
+        int dropBottom = 0;
+
+        //loop through heightArray
+        for (int i=0; i<heightArray.Length-1; i++) 
+        {
+            //if a point is higher than the following point start searching for where slope ends
+            if (heightArray[i] > heightArray[i + 1])
+            {
+                dropTop = heightArray[i];
+                dropBottom = heightArray[i + 1];
+
+                //loop to find out where the decrease in height ends, i.e where the bottom of the slope is. note that even ground also breaks slope
+                for (int j=i+1; j<heightArray.Length-2; j++) 
+                {
+                    
+                    //if the points following [i] keep decreasing set bottom of drop
+                    if (heightArray[j] > heightArray[j+1])
+                    {
+                        dropBottom = heightArray[j+1];
+                    }
+                    else { break; }                                 
+                }
+            }
+            currentDrop = dropTop - dropBottom;
+     //       Debug.Log("iteration: " + i + "\nCurrent drop = " + currentDrop + "=" + dropTop + "-" +  dropBottom);
+            if (currentDrop > highestDrop)
+            {
+                highestDrop = currentDrop;
+            }
+        }
+        return highestDrop;
+    }
+
+
+
+
+    //returns total 'amount' of terrain in level that is flat.
+    private int NbrOfFlatTerrain(int[] heightArray)
+    {
+        int totalFlatTerrain = 0;
+
+        for(int i=0; i<heightArray.Length-1; i++)
+        {
+            if (heightArray[i] == heightArray[i+1])
+            {
+                totalFlatTerrain++;
+            }
+        }
+        
+        return totalFlatTerrain;
     }
 
 
@@ -83,9 +181,9 @@ public class Evolution : MonoBehaviour
     public (List<Level> pop, int mostFit, int leastFit, int avgFitness) SortByFitness(List<Level> pop)
     {
 
-
-        pop.Sort((x, y) => x.fitnessValue.CompareTo(y.fitnessValue));
-
+        Debug.Log("b4 sort: " + pop[0].fitnessValue + ", last slot: " + pop[pop.Count-1].fitnessValue);
+        pop.Sort((x, y) => y.fitnessValue.CompareTo(x.fitnessValue));
+        Debug.Log("after sort: " + pop[0].fitnessValue + ", last slot: " + pop[pop.Count - 1].fitnessValue);
         int mostFit = pop[0].fitnessValue;
         int leastFit = pop[populationSize-1].fitnessValue;
         int avgFitness = 0;
@@ -93,7 +191,7 @@ public class Evolution : MonoBehaviour
         //code section that calcs avg fitness
         for(int i=0; i<populationSize; i++)
         {
-            avgFitness = pop[i].fitnessValue;
+            avgFitness += pop[i].fitnessValue;
         }
         avgFitness /= populationSize;
 
@@ -114,8 +212,16 @@ public class Evolution : MonoBehaviour
     //mutates 2nd half of population, i.e the copies of fittest half
     public List<Level> MutatePopulation(List<Level> pop)
     {
-        
-        for(int i=(populationSize/2); i<populationSize; i++)
+        //    System.Array.ForEach(pop[pop.Count - 1].heightArray, System.Console.WriteLine);
+    //    string str = "{";
+    //    foreach(int e in pop[pop.Count - 1].heightArray)
+    //    {
+   //         str += e + ",";
+    //    }
+   //     str += "}";
+   //     Debug.Log("before" + str);
+
+        for (int i=(populationSize/2); i<populationSize; i++)
         {
             int mutationPoint = Random.Range(1, individSize - 1);
             int mutationsLeft = mutationIntervalSize;
@@ -134,9 +240,25 @@ public class Evolution : MonoBehaviour
             }
             
         }
+     
+   //      str = "{";
+   //     foreach (int e in pop[pop.Count - 1].heightArray)
+   //     {
+  //          str += e + ",";
+  //      }
+   //     str += "}";
+  //      Debug.Log("after" + str);
+
         return pop;
     }
 
+    private void printArray(int[] array, string text)
+    {
+        for (int i = 0; i < array.Length; i++)
+        {
+
+        }
+    }
 
     public void GenerateLevel(int[] levelPoints)
     {

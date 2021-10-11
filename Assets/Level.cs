@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Level : MonoBehaviour
+public class Level 
 {
 
     public int fitnessValue;
@@ -32,13 +32,23 @@ public class Level : MonoBehaviour
         for(int i=1; i<heightArray.Length; i++)
         {
 
-            //loop that randomises value of a point. it performs a check so that difference between a point and its previous point isnt more than max allowed. Prevents 'exaggerated' up/down slopes
+            //loop that randomises value of a point.
+            //it performs a check so that difference between a point and its previous point isnt more than max allowed.
+            //Prevents 'exaggerated' up/down slopes
             do
             {
                 heightArray[i] = Random.Range(0, maxHeight);
             } while (Mathf.Abs(heightArray[i] - heightArray[i - 1]) > maxDifferenceBetweenPoints); 
 
         }
+
+        //    string str = "{";
+       //    foreach(int e in heightArray)
+      //     {
+     //            str += e + ",";
+      //     }
+     //        str += "}";
+    //         Debug.Log("initial value" + str);
 
     }
 
