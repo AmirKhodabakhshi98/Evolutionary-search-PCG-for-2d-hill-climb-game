@@ -12,7 +12,7 @@ public class Evolution : MonoBehaviour
     public int maxHeight;  //highest allowed point that terrain can be
     public int maxDifferenceBetweenPoints; //max allowed delta between height of 2 points
 
-    public int weightHighestDrop;
+    public int weightDrop;
     public int weightNbrOfFlatTerrain; // multiplier to give weighted value
 
     public int nbrOfDropsToLookFor; // how mayn drops max the fitness function wants to look for
@@ -23,11 +23,7 @@ public class Evolution : MonoBehaviour
 
     //private List<Level> population;
 
-    public Evolution(){
 
-    //    Search();
-
-    }
 
 
     public void Start()
@@ -106,21 +102,21 @@ public class Evolution : MonoBehaviour
     {
         //  int populationMaxFitness = 0; ?
 
-        int highestDrop = 0 ;
+        int dropSum = 0 ;
         int nbrOfFlatTerrain = 0;
 
         //loop through population and assign total score based on the various fitness tests.
         for(int i=0; i<pop.Count; i++)
         {
-            highestDrop = 0;
+            dropSum = 0;
             nbrOfFlatTerrain = 0;
 
       //      highestDrop = HighestDropFinder(pop[i].heightArray);
             nbrOfFlatTerrain = NbrOfFlatTerrainFinder(pop[i].heightArray);
-
+            dropSum = TotalDropFinder(pop[i].heightArray);
      //       pop[i].highestDrop = highestDrop;
-     //       pop[i].nbrOfFlatTerrain = nbrOfFlatTerrain;
-            pop[i].fitnessValue = highestDrop* weightHighestDrop - nbrOfFlatTerrain * weightNbrOfFlatTerrain;
+     //       pop[i].nbrOfFlatTerrain = nbrOfFlatTerrain; 
+            pop[i].fitnessValue = dropSum* weightDrop - nbrOfFlatTerrain * weightNbrOfFlatTerrain;
 
         //    Debug.Log("highest= " + highestDrop + ", flat= " + nbrOfFlatTerrain + "fitness: "+ pop[i].fitnessValue);
 
@@ -132,7 +128,7 @@ public class Evolution : MonoBehaviour
 
 
     //takes a height array and finds all the drops in the level. A drop is a downward slope up until flat ground or the ground rises again.
-    public void TotalDropFinder(int[] heighArray)
+    public int TotalDropFinder(int[] heighArray)
     {
 
         int indexTop = 0;
@@ -173,7 +169,16 @@ public class Evolution : MonoBehaviour
 
         dropList.Sort((x, y) => y.CompareTo(x)); // desc
 
-        /*
+        int count = 0;
+        int sum = 0;
+
+        while(count < nbrOfDropsToLookFor && count < dropList.Count)
+        {
+            sum += dropList[count];
+            count++;
+        }
+
+
         string str = "{";
         for (int i = 0; i < dropList.Count; i++)
         {
@@ -181,7 +186,14 @@ public class Evolution : MonoBehaviour
         }
         str += "}";
         Debug.Log("test function: " + str);
-        */
+
+
+
+        return sum;
+
+
+        
+  
 
     }
 
@@ -217,15 +229,15 @@ public class Evolution : MonoBehaviour
         pop.Sort((x, y) => y.fitnessValue.CompareTo(x.fitnessValue));
         Debug.Log("after sort: " + pop[0].fitnessValue + ", last slot: " + pop[pop.Count - 1].fitnessValue);
         int mostFit = pop[0].fitnessValue;
-        int leastFit = pop[populationSize-1].fitnessValue;
+        int leastFit = pop[pop.Count-1].fitnessValue;
         int avgFitness = 0;
 
         //code section that calcs avg fitness
-        for(int i=0; i<populationSize; i++)
+        for(int i=0; i<pop.Count; i++)
         {
             avgFitness += pop[i].fitnessValue;
         }
-        avgFitness /= populationSize;
+        avgFitness /= pop.Count;
 
         return (pop, mostFit, leastFit, avgFitness);
     } 
@@ -233,9 +245,9 @@ public class Evolution : MonoBehaviour
     //replaces bottom half of population with top half
     public List<Level> NaturalSelection(List<Level> pop)
     {
-        for(int i=0; i<(populationSize/2); i++)
+        for(int i=0; i<(pop.Count/2); i++)
         {
-            pop[populationSize / 2 + i] = pop[i];
+            pop[pop.Count / 2 + i] = pop[i];
         }
 
         return pop;
@@ -253,7 +265,7 @@ public class Evolution : MonoBehaviour
    //     str += "}";
    //     Debug.Log("before" + str);
 
-        for (int i=(populationSize/2); i<populationSize; i++)
+        for (int i=(pop.Count/2); i<pop.Count; i++)
         {
             int mutationPoint = Random.Range(1, individSize - 1);
             int mutationsLeft = mutationIntervalSize;
