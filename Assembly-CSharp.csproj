@@ -58,6 +58,7 @@
   <ItemGroup>
     <Compile Include="Assets\Evolution.cs" />
     <Compile Include="Assets\Level.cs" />
+    <Compile Include="Assets\CreateLevel.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

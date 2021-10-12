@@ -11,6 +11,8 @@ public class Level
     public int highestDrop;
     public int dropSpread;
     public int nbrOfDrops;
+    public int nbrOfFlatTerrain;
+    public int highestPoint;
     public List<int> dropsHeight;
 
     public Level(int size, int maxHeight, int maxDifferenceBetweenPoints)
