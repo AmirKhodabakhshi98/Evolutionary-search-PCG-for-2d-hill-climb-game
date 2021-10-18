@@ -5,22 +5,37 @@ using UnityEngine;
 public class Level 
 {
 
-    public int fitnessValue;
-    public int[] heightArray;
+    private int fitnessValue;
+    private int[] heightArray;
+
+    //vars for expressive range chart.
+    public int nbrOfFlat;
+    public int totalDrop;
+    public int maxDrop;
     
-    public int highestDrop;
-    public int dropSpread;
-    public int nbrOfDrops;
-    public int nbrOfFlatTerrain;
-    public int highestPoint;
-    public List<int> dropsHeight;
+    public int getFitnessValue()
+    {
+        return fitnessValue;
+    }
+
+    public void setFitnessValue(int fitnessValue)
+    {
+        this.fitnessValue = fitnessValue;
+    }
+    
+    public int[] getHeightArray()
+    {
+        return heightArray;
+    }
+
+    public void setHeightArray(int[] array)
+    {
+        heightArray = array;
+    }
 
     public Level(int size, int maxHeight, int maxDifferenceBetweenPoints)
     {
         heightArray = new int[size];
-        nbrOfDrops = 0;
-        dropSpread = 0;
-        highestDrop = 0;
         fitnessValue = 0;
 
         RandomizeStartingValues(maxHeight, maxDifferenceBetweenPoints);
@@ -43,14 +58,6 @@ public class Level
             } while (Mathf.Abs(heightArray[i] - heightArray[i - 1]) > maxDifferenceBetweenPoints); 
 
         }
-
-        //    string str = "{";
-       //    foreach(int e in heightArray)
-      //     {
-     //            str += e + ",";
-      //     }
-     //        str += "}";
-    //         Debug.Log("initial value" + str);
 
     }
 

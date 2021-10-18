@@ -177,7 +177,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 123.537186
+  orthographic size: 196.33228
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -201,8 +201,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 519420028}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 251.3, y: -9.6, z: -10}
-  m_LocalScale: {x: 1.4407, y: 1.4407, z: 1.4407}
+  m_LocalPosition: {x: 329, y: -33, z: -10}
+  m_LocalScale: {x: 1.4603857, y: 1.4603857, z: 1.4603857}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
@@ -219,17 +219,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80dac636512ee3a44b89c8c2a7ca9226, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  populationSize: 1000
-  fitnessTarget: 50
-  generationsLimit: 10
+  populationSize: 100
+  fitnessTarget: 110
+  generationsLimit: 500
   individSize: 20
   mutationIntervalSize: 1
-  maxHeight: 50
+  maxHeight: 30
   maxDifferenceBetweenPoints: 7
-  weightHighestDrop: 1
-  weightNbrOfFlatTerrain: 0
+  weightDrop: 2
+  weightNbrOfFlatTerrain: 1
   nbrOfDropsToLookFor: 3
-  distanceBetweenPoints: 0.1
+  distanceBetweenPoints: 0.12
   tangentLength: 0.05
 --- !u!1001 &1537711282
 PrefabInstance:

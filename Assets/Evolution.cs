@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using UnityEngine;
 
 public class Evolution : MonoBehaviour
@@ -19,7 +21,10 @@ public class Evolution : MonoBehaviour
 
     public float distanceBetweenPoints; // for map generation
     public float tangentLength; // for map generation
-    
+
+    private string path = @"E:\backup ssd\downloads\MAU HT 20\PCG\Assignment 1\output.txt";
+    private string path2 = @"E:\backup ssd\downloads\MAU HT 20\PCG\Assignment 1\outputFitness.txt";
+    private string path3 = @"E:\backup ssd\downloads\MAU HT 20\PCG\Assignment 1\outputExpressiveRange.txt";
 
     //private List<Level> population;
 
@@ -28,59 +33,48 @@ public class Evolution : MonoBehaviour
 
     public void Start()
     {
-        Search();
+              Search();
 
     }
 
-    private void Search() //NOOOOOOOOOOOOOOOOOOOOTEEEEE här lägga till o skriva ut siffror etc
+    private string str = "";
+    private string str2 = "";
+    private void Search() 
     {
         List<Level> population = new List<Level>();
         int nbrOfGenerations = 0;
 
         population = InitializePopulation(population); //initialize a population with random values
-        int most=0;
-        int least=0;
-        int avg=0;
 
+
+        
         while (nbrOfGenerations < generationsLimit)
         {
-
+            
             population = Fitness(population);   // assign them all a fitness value
             var (pop, mostFit, leastFit, avgFitness) = SortByFitness(population);  //sort based on fitness value
-
-            most = mostFit;
-            least = leastFit;
-            avg = avgFitness;
-
+            population = pop;
+            str2 += "Generation: " + nbrOfGenerations + ", Most fit: " + mostFit + ", Least Fit: " + leastFit + ", Average: " + avgFitness +  "\n";
 
             //if target fitness has been reached search is stopped
             if (mostFit >= fitnessTarget)
             {
                 
-
                 break; }
 
-            population = NaturalSelection(pop);     //replace bottom half with copies of the top half
+            population = NaturalSelection(population);     //replace bottom half with copies of the top half
             population = MutatePopulation(population);     //mutate the copied members of population
-
-
-            
 
             nbrOfGenerations++;
         }
 
-        Debug.Log("mostfit: " + most + "\n" + "Least:"  + least);
-        Debug.Log("avg: " + avg);
-        Debug.Log("highest drop: " + population[0].highestDrop);
-        Debug.Log("fitness: " + population[0].fitnessValue);
-    //    Debug.Log("highest dropDirect: " + HighestDropFinder(population[0].heightArray));
-        Debug.Log("population count: " + population.Count);
-        GenerateLevel(population[0].heightArray); //sends in top ranked candidate for level generation after search is finished
-        TotalDropFinder(population[0].heightArray);
+        string str3 = "Nbr of flat: " +  population[0].nbrOfFlat + ", Totaldrop: " + population[0].totalDrop + ", max drop: " + population[0].maxDrop;
 
-        
-
-
+        File.WriteAllText(path, str);
+        File.WriteAllText(path2, str2);
+        File.WriteAllText(path3, str3);
+        GenerateLevel(population[0].getHeightArray()); //sends in top ranked candidate for level generation after search is finished
+      //  TotalDropFinder(population[0].heightArray);
 
     }
 
@@ -95,44 +89,49 @@ public class Evolution : MonoBehaviour
         return pop;
     }
 
-    
 
     //method to assign fitness score to each member of population
     public List<Level> Fitness(List<Level> pop)
     {
-        //  int populationMaxFitness = 0; ?
 
         int dropSum = 0 ;
         int nbrOfFlatTerrain = 0;
+        int fit = 0;
+        int tooSteep = 0;
 
         //loop through population and assign total score based on the various fitness tests.
         for(int i=0; i<pop.Count; i++)
         {
             dropSum = 0;
             nbrOfFlatTerrain = 0;
+            fit = 0;
+            tooSteep = 0;
 
-      //      highestDrop = HighestDropFinder(pop[i].heightArray);
-            nbrOfFlatTerrain = NbrOfFlatTerrainFinder(pop[i].heightArray);
-            dropSum = TotalDropFinder(pop[i].heightArray);
-     //       pop[i].highestDrop = highestDrop;
-     //       pop[i].nbrOfFlatTerrain = nbrOfFlatTerrain; 
-            pop[i].fitnessValue = dropSum* weightDrop - nbrOfFlatTerrain * weightNbrOfFlatTerrain;
+            nbrOfFlatTerrain = NbrOfFlatTerrainFinder(pop[i].getHeightArray());
 
-        //    Debug.Log("highest= " + highestDrop + ", flat= " + nbrOfFlatTerrain + "fitness: "+ pop[i].fitnessValue);
+            var (sum, max) = TotalDropFinder(pop[i].getHeightArray());  //sort based on fitness value
 
+            dropSum = sum;
+
+            pop[i].maxDrop = max;
+            pop[i].totalDrop = dropSum; //for exp range
+            pop[i].nbrOfFlat= nbrOfFlatTerrain; //for exp range
+
+            fit = dropSum * weightDrop - nbrOfFlatTerrain * weightNbrOfFlatTerrain;
+            pop[i].setFitnessValue(fit);
         }
         
         return pop;
     }
 
-
-
+  //  (List<Level> pop, int mostFit, int leastFit, int avgFitness)
     //takes a height array and finds all the drops in the level. A drop is a downward slope up until flat ground or the ground rises again.
-    public int TotalDropFinder(int[] heighArray)
+    public (int sum, int max) TotalDropFinder(int[] heighArray)
     {
 
         int indexTop = 0;
         int indexBottom = 0;
+        int max = 0; //for exp range
 
         List<int> dropList = new List<int>();
         int runs = 0;
@@ -169,34 +168,25 @@ public class Evolution : MonoBehaviour
 
         dropList.Sort((x, y) => y.CompareTo(x)); // desc
 
+        if(dropList[0] != null)
+        {
+
+        
+        max = dropList[0];
+        }
+
         int count = 0;
         int sum = 0;
+
+
 
         while(count < nbrOfDropsToLookFor && count < dropList.Count)
         {
             sum += dropList[count];
             count++;
         }
-
-
-        string str = "{";
-        for (int i = 0; i < dropList.Count; i++)
-        {
-            str += dropList[i] + ", ";
-        }
-        str += "}";
-        Debug.Log("test function: " + str);
-
-
-
-        return sum;
-
-
-        
-  
-
+        return (sum, max);
     }
-
 
 
 
@@ -219,108 +209,158 @@ public class Evolution : MonoBehaviour
 
 
 
-
-
     //sorts population in list based on fitness
     public (List<Level> pop, int mostFit, int leastFit, int avgFitness) SortByFitness(List<Level> pop)
     {
+        str += "pre sort: {";
+        for(int i=0; i<pop.Count; i++)
+        {
+            
+            str += pop[i].getFitnessValue() + "," ;
+        }
+        str += "\n";
 
-        Debug.Log("b4 sort: " + pop[0].fitnessValue + ", last slot: " + pop[pop.Count-1].fitnessValue);
-        pop.Sort((x, y) => y.fitnessValue.CompareTo(x.fitnessValue));
-        Debug.Log("after sort: " + pop[0].fitnessValue + ", last slot: " + pop[pop.Count - 1].fitnessValue);
-        int mostFit = pop[0].fitnessValue;
-        int leastFit = pop[pop.Count-1].fitnessValue;
+
+        pop.Sort((x, y) => y.getFitnessValue().CompareTo(x.getFitnessValue())); //sort list descending order based on fitness value
+
+        str += "postsort: {";
+        for (int i = 0; i < pop.Count; i++)
+        {
+
+            str += pop[i].getFitnessValue() + ",";
+        }
+        str += "\n";
+
+        int mostFit = pop[0].getFitnessValue();
+        int leastFit = pop[pop.Count-1].getFitnessValue();
         int avgFitness = 0;
 
         //code section that calcs avg fitness
         for(int i=0; i<pop.Count; i++)
         {
-            avgFitness += pop[i].fitnessValue;
+            avgFitness += pop[i].getFitnessValue();
         }
         avgFitness /= pop.Count;
 
         return (pop, mostFit, leastFit, avgFitness);
     } 
 
+
+
     //replaces bottom half of population with top half
     public List<Level> NaturalSelection(List<Level> pop)
     {
-        for(int i=0; i<(pop.Count/2); i++)
+        
+        for(int i= individSize-1; i>=(individSize/2); i--)
         {
-            pop[pop.Count / 2 + i] = pop[i];
+            pop.RemoveAt(i);
+         //   pop[pop.Count / 2 + i] = pop[i];
+        }
+
+        for(int j=0; j<(individSize/2); j++)
+        {
+            Level lvl = new Level(individSize,maxHeight,maxDifferenceBetweenPoints);
+            
+            
+            int fit = pop[j].getFitnessValue();
+            lvl.setFitnessValue( fit);
+
+            int[] tempArray = new int[individSize];
+            int[] copyArray = new int[individSize];
+            copyArray = pop[j].getHeightArray();
+
+            for(int x=0; x<tempArray.Length; x++)
+            {
+                tempArray[x] = copyArray[x];
+            }
+
+            lvl.setHeightArray(tempArray);
+
+            pop.Add(lvl);
         }
 
         return pop;
     }
 
-    //mutates 2nd half of population, i.e the copies of fittest half
+
+
+
+
     public List<Level> MutatePopulation(List<Level> pop)
     {
-        //    System.Array.ForEach(pop[pop.Count - 1].heightArray, System.Console.WriteLine);
-    //    string str = "{";
-    //    foreach(int e in pop[pop.Count - 1].heightArray)
-    //    {
-   //         str += e + ",";
-    //    }
-   //     str += "}";
-   //     Debug.Log("before" + str);
 
-        for (int i=(pop.Count/2); i<pop.Count; i++)
+
+        for (int i = (pop.Count / 2); i < pop.Count; i++)
         {
-            int mutationPoint = Random.Range(1, individSize - 1);
+
+            int mutationPoint = Random.Range(1, pop[i].getHeightArray().Length - 1);
             int mutationsLeft = mutationIntervalSize;
 
-            while(mutationsLeft>0 && mutationPoint < individSize)
+            while (mutationsLeft > 0 && mutationPoint < pop[i].getHeightArray().Length)
             {
-                bool constraint = true;
-                //loop that randomises value of a point. it performs a check so that difference between a point and its previous point isnt more than max allowed. Prevents 'exaggerated' up/down slopes
-                do
+
+
+                //roll a mutated value thats within range of previous point
+                int value = Random.Range(pop[i].getHeightArray()[mutationPoint - 1] - maxDifferenceBetweenPoints, pop[i].getHeightArray()[mutationPoint - 1] + maxDifferenceBetweenPoints);
+
+                
+
+                //perform corrections if value is out of bounds
+                if (value < 0)
                 {
-                    pop[i].heightArray[mutationPoint] = Random.Range(0, maxHeight);
-                    if(Mathf.Abs(pop[i].heightArray[mutationPoint] - pop[i].heightArray[mutationPoint - 1]) <= maxDifferenceBetweenPoints)
+                    value = 0;
+                }
+                if (value > maxHeight)
+                {
+                    value = maxHeight;
+                }
+
+                //checks if its the last point. Means we can set the value without worrying about the point after.
+                if ((mutationPoint + 1) >= pop[i].getHeightArray().Length)
+                {
+                    pop[i].getHeightArray()[mutationPoint] = value;
+                }
+
+                //if its the last mutation spot we need to check that it's within range of next point
+                else if (mutationsLeft == 1)
+                {
+                    int absoluteDifference = Mathf.Abs(value - pop[i].getHeightArray()[mutationPoint + 1]);
+                    //if out of range of next spot
+                    if (absoluteDifference > maxDifferenceBetweenPoints)
                     {
-                        if ((mutationPoint +1) >= individSize)
+                        //if it's too low compared to next value, correct it to lowest possible 
+                        if (value < pop[i].getHeightArray()[mutationPoint + 1])
                         {
-                            constraint = false;
-                        }else if(Mathf.Abs(pop[i].heightArray[mutationPoint] - pop[i].heightArray[mutationPoint + 1]) <= maxDifferenceBetweenPoints)
-                        {
-                            constraint = false;
+                            value = pop[i].getHeightArray()[mutationPoint + 1] - maxDifferenceBetweenPoints;
+
                         }
+                        //else correct value to highest difference the other way
+                        else if (value > pop[i].getHeightArray()[mutationPoint + 1])
+                        { value = pop[i].getHeightArray()[mutationPoint + 1] + maxDifferenceBetweenPoints; }
                     }
-                } while ( constraint
-                        );
-                
-                
+
+                    pop[i].getHeightArray()[mutationPoint] = value;
+                }
+
+                else
+                {
+                    pop[i].getHeightArray()[mutationPoint] = value;
+                }
+
+
                 mutationsLeft--;
                 mutationPoint++;
-            }
-            
-        }
-     
-   //      str = "{";
-   //     foreach (int e in pop[pop.Count - 1].heightArray)
-   //     {
-  //          str += e + ",";
-  //      }
-   //     str += "}";
-  //      Debug.Log("after" + str);
 
+            }
+        }
         return pop;
     }
 
-    private void printArray(int[] array, string text)
-    {
-        for (int i = 0; i < array.Length; i++)
-        {
 
-        }
-    }
 
     public void GenerateLevel(int[] heightArray)
     {
-
         new CreateLevel(heightArray, distanceBetweenPoints, tangentLength);
-        
     }
 
 
@@ -328,46 +368,4 @@ public class Evolution : MonoBehaviour
 
 
 
-/*
 
-    //takes a level and returns the biggest drop/downward slope in the level
-    private int HighestDropFinder(int[] heightArray)
-    {
-        int highestDrop = 0;
-        int currentDrop = 0;
-
-        int dropTop = 0;
-        int dropBottom = 0;
-
-        //loop through heightArray
-        for (int i=0; i<heightArray.Length-1; i++) 
-        {
-            //if a point is higher than the following point start searching for where slope ends
-            if (heightArray[i] > heightArray[i + 1])
-            {
-                dropTop = heightArray[i];
-                dropBottom = heightArray[i + 1];
-
-                //loop to find out where the decrease in height ends, i.e where the bottom of the slope is. note that even ground also breaks slope
-                for (int j=i+1; j<heightArray.Length-2; j++) 
-                {
-                    
-                    //if the points following [i] keep decreasing set bottom of drop
-                    if (heightArray[j] > heightArray[j+1])
-                    {
-                        dropBottom = heightArray[j+1];
-                    }
-                    else { break; }                                 
-                }
-            }
-            currentDrop = dropTop - dropBottom;
-     //       Debug.Log("iteration: " + i + "\nCurrent drop = " + currentDrop + "=" + dropTop + "-" +  dropBottom);
-            if (currentDrop > highestDrop)
-            {
-                highestDrop = currentDrop;
-            }
-        }
-        return highestDrop;
-    }
-
-*/
